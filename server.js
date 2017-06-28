@@ -33,13 +33,13 @@ server.on('request', function(req, res){
             try {
                 db = JSON.parse(fs.readFileSync(databaseURL, 'utf8'));
                 console.log("Found database.")
-                res.json(db); // <-- this is part of express.json
+                sendData(db, res);
             } catch(e) {
                 console.log(e)
                 scraper.getStats(summonerName, queues, db).then((result) =>{
                     db = result;
                     fs.writeFileSync(databaseURL, JSON.stringify(db));
-                    res.json(db);
+                    sendData(db, res);
                 }).catch(function(e){
                     console.log("Unable to retrieve stats.");
                 });
@@ -51,3 +51,8 @@ server.on('request', function(req, res){
     }
     res.end();
 });
+
+function sendData(db, res){
+    var data = JSON.stringify(db);
+    res.write(data);
+}

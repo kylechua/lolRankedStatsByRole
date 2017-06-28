@@ -5,14 +5,17 @@ var scraper = require('./scraper.js');
 var server = http.createServer().listen(8080);
 
 // Later, do this all thru server request
-var summonerName = 'biur';
+var summonerName = 'KyIe Chua';
+var queueTypes = [420,440];
 
 // Database which stores exchange rates and modifier
-var databaseURL = 'data/' + summonerName + '.json';
+var databaseURL = 'data/summoners/' + summonerName + '.json';
 
 var db = {};
-db = scraper.getStats(summonerName, db);
-fs.writeFileSync(databaseURL, JSON.stringify(db));
+scraper.getStats(summonerName, queueTypes, db).then((result) =>{
+    db = result;
+    fs.writeFileSync(databaseURL, JSON.stringify(db));
+});
 
 /*
 // Parse Database

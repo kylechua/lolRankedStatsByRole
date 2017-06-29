@@ -32,7 +32,7 @@ server.on('request', function(req, res){
                 sendData(databaseURL, res);
             } catch(e) {
                 console.log("Collecting data...")
-                scraper.getStats(summonerName, season, databaseURL)
+                scraper.getStats(summonerName, season, databaseURL);
 
                 /*.then(function(result){
                     sendData(databaseURL, res);

@@ -31,18 +31,15 @@ server.on('request', function(req, res){
                 console.log("Found database.")
                 sendData(databaseURL, res);
             } catch(e) {
-                console.log("Collecting data...")
-                scraper.getStats(summonerName, season, databaseURL);
-
-                /*.then(function(result){
+                console.log("Collecting data...");
+                res.statusCode = 102;
+                res.write("Refresh");
+                res.end();
+                scraper.getStats(summonerName, season, databaseURL).then(function(result){
                     sendData(databaseURL, res);
                 }).catch(function(e){
                     
                 });
-                */
-                res.statusCode = 102;
-                res.write("Refresh");
-                res.end();
             }
         }
     } else {

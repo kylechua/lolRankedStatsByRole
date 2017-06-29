@@ -29,7 +29,7 @@ var matchlist = [];
 
 exports.getStats = function(summoner, season, databaseURL){
 
-    //return new Promise(function(resolve, reject) {
+    return new Promise(function(resolve, reject) {
         // Clear cache
         cache.solo.TOP = {games:0,wins:0,kills:0,deaths:0,assists:0};
         cache.solo.JUNGLE = {games:0,wins:0,kills:0,deaths:0,assists:0};
@@ -47,18 +47,17 @@ exports.getStats = function(summoner, season, databaseURL){
 
         matchlist = [];
 
-        queryStats(summoner, season, databaseURL)
-        /*.then(function(result) {
+        queryStats(summoner, season, databaseURL).then(function(result) {
             resolve(result);
         });
     });
-    */
+    
 
 }
 
 function queryStats(summoner, season, databaseURL){
 
-    //return new Promise(function(resolve, reject) {
+    return new Promise(function(resolve, reject) {
         var accountID;
         var numGames;
         console.log("--------------------")
@@ -80,12 +79,12 @@ function queryStats(summoner, season, databaseURL){
         }).then(function(result) {
             console.log("--------------------");
             console.log("Query Completed. " + numGames + " games parsed.");
-            //resolve(cache);
+            resolve(cache);
         }).catch(function(e){
             console.log(e);
-            //reject();
+            reject();
         });
-    //});
+    });
 }
 
 function fetchID(summoner){

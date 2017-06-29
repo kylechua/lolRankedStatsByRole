@@ -31,9 +31,6 @@ server.on('request', function(req, res){
                 console.log("Found database.")
                 sendData(databaseURL, res);
             } catch(e) {
-                if (e.statusCode == ENOENT){
-                    console.log("Data not found.")
-                }
                 console.log("Collecting data...")
                 scraper.getStats(summonerName, season, databaseURL).then(function(result){
                     sendData(databaseURL, res);

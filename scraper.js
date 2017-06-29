@@ -7,59 +7,77 @@ const APIKEY = keygen.getKey();
 // Data stores for each role
 
 var cache = {
-        TOP: undefined,
-        JUNGLE: undefined,
-        MID: undefined,
-        ADC: undefined,
-        SUPPORT: undefined,
-        TOTAL: undefined
+        solo: {
+            TOP: undefined,
+            JUNGLE: undefined,
+            MID: undefined,
+            ADC: undefined,
+            SUPPORT: undefined,
+            TOTAL: undefined
+        },
+        flex: {
+            TOP: undefined,
+            JUNGLE: undefined,
+            MID: undefined,
+            ADC: undefined,
+            SUPPORT: undefined,
+            TOTAL: undefined
+        }
     };
 
 var matchlist = [];
 
-exports.getStats = function(summoner, queues, db){
+exports.getStats = function(summoner, season, databaseURL){
 
-    return new Promise((resolve, reject) =>{
+    return new Promise(function(resolve, reject) {
         // Clear cache
-        cache.TOP = {games:0,wins:0,tKills:0,tDeaths:0,tAssists:0,kills:0,deaths:0,assists:0};
-        cache.JUNGLE = {games:0,wins:0,tKills:0,tDeaths:0,tAssists:0,kills:0,deaths:0,assists:0};
-        cache.MID = {games:0,wins:0,tKills:0,tDeaths:0,tAssists:0,kills:0,deaths:0,assists:0};
-        cache.ADC = {games:0,wins:0,tKills:0,tDeaths:0,tAssists:0,kills:0,deaths:0,assists:0};
-        cache.SUPPORT = {games:0,wins:0,tKills:0,tDeaths:0,tAssists:0,kills:0,deaths:0,assists:0};
-        cache.TOTAL = {games:0,wins:0,tKills:0,tDeaths:0,tAssists:0,kills:0,deaths:0,assists:0};
+        cache.solo.TOP = {games:0,wins:0,kills:0,deaths:0,assists:0};
+        cache.solo.JUNGLE = {games:0,wins:0,kills:0,deaths:0,assists:0};
+        cache.solo.MID = {games:0,wins:0,kills:0,deaths:0,assists:0};
+        cache.solo.ADC = {games:0,wins:0,kills:0,deaths:0,assists:0};
+        cache.solo.SUPPORT = {games:0,wins:0,kills:0,deaths:0,assists:0};
+        cache.solo.TOTAL = {games:0,wins:0,kills:0,deaths:0,assists:0};
+
+        cache.flex.TOP = {games:0,wins:0,kills:0,deaths:0,assists:0};
+        cache.flex.JUNGLE = {games:0,wins:0,kills:0,deaths:0,assists:0};
+        cache.flex.MID = {games:0,wins:0,kills:0,deaths:0,assists:0};
+        cache.flex.ADC = {games:0,wins:0,kills:0,deaths:0,assists:0};
+        cache.flex.SUPPORT = {games:0,wins:0,kills:0,deaths:0,assists:0};
+        cache.flex.TOTAL = {games:0,wins:0,kills:0,deaths:0,assists:0};
 
         matchlist = [];
 
-        queryStats(summoner, queues, db).then((result) =>{
+        queryStats(summoner, season, databaseURL).then(function(result) {
             resolve(result);
         });
     });
 
 }
 
-function queryStats(summoner, queues, db){
+function queryStats(summoner, season, databaseURL){
 
-    return new Promise((resolve, reject) =>{
+    return new Promise(function(resolve, reject) {
         var accountID;
+        var numGames;
         console.log("--------------------")
         console.log(summoner)
 
-        fetchID(summoner).then((result) =>{
+        fetchID(summoner).then(function(result) {
             accountID = result;
             console.log("Account ID: " + accountID);
-            return fetchMatchlist(accountID, queues);
-        }).then(() =>{
-            console.log("Queue Types: " + queues);
-            console.log("Games Played: " + matchlist.length);
+            return fetchMatchlist(accountID, season);
+        }).then(function(result) {
+            var matchlist = result;
+            numGames = matchlist.length
+            console.log("Games Played: " + numGames);
             console.log("--------------------");
             return parseMatchlist(accountID, matchlist);
-        }).then((result) =>{
+        }).then(function(result) {
             var gameQueries = result;
-            return fetchMatches(accountID, gameQueries)
-        }).then((result) =>{
+            return fetchMatches(accountID, gameQueries, numGames, databaseURL)
+        }).then(function(result) {
             console.log("--------------------");
-            console.log("Query Completed. " + matchlist.length + " games parsed.");
-            fs.writeFileSync('./data/cache.json', JSON.stringify(cache));
+            console.log("Query Completed. " + numGames + " games parsed.");
             resolve(cache);
         }).catch(function(e){
             console.log(e);
@@ -69,79 +87,50 @@ function queryStats(summoner, queues, db){
 }
 
 function fetchID(summoner){
-    return new Promise((resolve, reject) =>{
+    return new Promise(function(resolve, reject) {
         var myRequest = 'https://na1.api.riotgames.com/lol/summoner/v3/summoners/by-name/' + summoner + '?api_key=' + APIKEY;
         https.get(myRequest, function(response){
             var body = '';
-            response.on('data', (line) =>{
+            response.on('data', function(line) {
                 body += line;
-            }).on('end', () =>{
+            }).on('end', function() {
                 var res = JSON.parse(body);
                 resolve(res.accountId);
             });
-        }).on('error', (e) =>{
+        }).on('error', function(e) {
             reject(false);
         });
     });
 }
 
-function fetchMatchlist(accountID, queues){
-    return new Promise((resolveOuter, rejectOuter) =>{
+function fetchMatchlist(accountID, season){
 
-        var i=0;
-        var numQueries = queues.length;
-        var delay = 1250;
-        var queries = queues;
-        var last = false;
-
-        var reference = [];
-
-        var fetchMatchlist = setInterval(function(){
-            var myRequest = 'https://na1.api.riotgames.com/lol/match/v3/matchlists/by-account/' + accountID + '?queue=' + queues[i] + '&season=8&api_key=' + APIKEY;
-
-            var query = new Promise((resolve,reject) =>{
-                queries.push(query);
-                https.get(myRequest, function(response){
-                    var body = '';
-                    response.on('data', (line) =>{
-                        body += line;
-                    }).on('end', () =>{
-                        var thisQueue = JSON.parse(body);
-                        if (!reference.includes(thisQueue.matches[0].gameId)){
-                            var len = thisQueue.matches.length;
-                            reference.push(thisQueue.matches[0].gameId);
-                            for (var a=0; a<len; a++){
-                                matchlist.push(thisQueue.matches[a]);
-                            }
-                            i++;
-                            resolve();
-                            if (last){
-                                resolveOuter();
-                            }
-                        } else {
-                            console.log("Error getting match list. Trying again...")
-                        }
-                    }).on('error', (e) =>{
-                        reject();
-                    });
-                })
+    return new Promise(function(resolve, reject) {
+        var myRequest = 'https://na1.api.riotgames.com/lol/match/v3/matchlists/by-account/' + accountID + '?season=' + season + '&api_key=' + APIKEY;
+        https.get(myRequest, function(response){
+            var body = '';
+            response.on('data', function(line) {
+                body += line;
+            }).on('end', function() {
+                var thisList = JSON.parse(body);
+                var matchlist = thisList.matches;
+                resolve(matchlist);
+            }).on('error', function(e) {
+                console.log(e);
+                reject();
             });
-            if (i == numQueries-1){
-                clearInterval(fetchMatchlist);
-                last = true;
-            }
-        }, delay);
-        
+        });
     });
 }
 
 function parseMatchlist(id, matches){
 
-    return new Promise((resolve, reject) =>{
+    return new Promise(function(resolve, reject) {
         var gameQueries = [];
         for (var a=0; a<matches.length; a++){
             var gameID = matches[a].gameId;
             var role = matches[a].lane;
+            var queueType = matches[a].queue;
             if (role == "BOTTOM"){
                 if (matches[a].role == "DUO_SUPPORT"){
                     role = "SUPPORT";
@@ -151,7 +140,8 @@ function parseMatchlist(id, matches){
             }
             var query = {
                 matchID: gameID,
-                playerRole: role
+                playerRole: role,
+                queue: queueType
             };
             gameQueries.push(query)
         }
@@ -160,9 +150,9 @@ function parseMatchlist(id, matches){
     });
 }
 
-function fetchMatches(accountID, gameQueries){
+function fetchMatches(accountID, gameQueries, numGames, databaseURL){
 
-    return new Promise((resolveOuter, rejectOuter) =>{
+    return new Promise(function(resolveOuter, rejectOuter) {
         var i = 0;
         var numQueries = gameQueries.length;
         var delay = 1250;
@@ -172,20 +162,21 @@ function fetchMatches(accountID, gameQueries){
         var fetchMatch = setInterval(function(){
             var gameID = gameQueries[i].matchID;
             var role = gameQueries[i].playerRole;
+            var queueType = gameQueries[i].queue;
 
             var myRequest = 'https://na1.api.riotgames.com/lol/match/v3/matches/' + gameID + '?api_key=' + APIKEY;
 
-            var query = new Promise((resolve,reject) =>{
+            var query = new Promise(function(resolve,reject) {
                 queries.push(query);
                 https.get(myRequest, function(response){
                     var body = '';
-                    response.on('data', (line) =>{
+                    response.on('data', function(line) {
                         body += line;
-                    }).on('end', () =>{
+                    }).on('end', function() {
                         var match = JSON.parse(body);
                         if (match.gameId == gameID){
-                            console.log("("+(i+1)+" of "+matchlist.length+")");
-                            let parser = parseMatch(accountID, role, match).then(() =>{
+                            console.log("("+(i+1)+" of "+numGames+")");
+                            var parser = parseMatch(accountID, role, queueType, match, databaseURL).then(function() {
                                 i++;
                                 resolve();
                                 if (last){
@@ -195,7 +186,7 @@ function fetchMatches(accountID, gameQueries){
                         } else {
                             console.log(i + ": ERROR. Trying again in " + delay + "ms.");
                         }
-                    }).on('error', (e) =>{
+                    }).on('error', function(e) {
                         reject();
                     });
                 })
@@ -210,9 +201,9 @@ function fetchMatches(accountID, gameQueries){
 
 }
 
-function parseMatch(accountID, role, match, resolve){
+function parseMatch(accountID, role, queueType, match, databaseURL){
 
-    return new Promise((resolve, reject) =>{
+    return new Promise(function(resolve, reject) {
 
         // get pariticipantID matching with this account
         var pID;
@@ -225,40 +216,58 @@ function parseMatch(accountID, role, match, resolve){
         }
 
         var pStats = match.participants[pID-1].stats;
+
         var win = pStats.win;
+        if (win)
+            win = 1;
+        else win = 0;
+
         var pKills = pStats.kills;
         var pDeaths = pStats.deaths;
         var pAssists = pStats.assists;
 
-        cache[role].games++;
-        cache[role].tKills += pKills;
-        cache[role].tDeaths += pDeaths;
-        cache[role].tAssists += pAssists;
-        cache[role].kills = cache[role].tKills/cache[role].games;
-        cache[role].deaths = cache[role].tDeaths/cache[role].games;
-        cache[role].assists = cache[role].tAssists/cache[role].games;
+        if (queueType == 420){
+            cache.solo[role].games++;
+            cache.solo[role].wins += win;
+            cache.solo[role].kills += pKills;
+            cache.solo[role].deaths += pDeaths;
+            cache.solo[role].assists += pAssists;
 
-        cache.TOTAL.games++;
-        cache.TOTAL.tKills += pKills;
-        cache.TOTAL.tDeaths += pDeaths;
-        cache.TOTAL.tAssists += pAssists;
-        cache.TOTAL.kills = cache.TOTAL.tKills/cache.TOTAL.games;
-        cache.TOTAL.deaths = cache.TOTAL.tDeaths/cache.TOTAL.games;
-        cache.TOTAL.assists = cache.TOTAL.tAssists/cache.TOTAL.games;
+            cache.solo.TOTAL.games++;
+            cache.solo.TOTAL.wins += win;
+            cache.solo.TOTAL.kills += pKills;
+            cache.solo.TOTAL.deaths += pDeaths;
+            cache.solo.TOTAL.assists += pAssists;
+        } else {
+            cache.flex[role].games++;
+            cache.flex[role].wins += win;
+            cache.flex[role].kills += pKills;
+            cache.flex[role].deaths += pDeaths;
+            cache.flex[role].assists += pAssists;
+
+            cache.flex.TOTAL.games++;
+            cache.flex.TOTAL.wins += win;
+            cache.flex.TOTAL.kills += pKills;
+            cache.flex.TOTAL.deaths += pDeaths;
+            cache.flex.TOTAL.assists += pAssists;
+        }
 
         var message = "";
-        if (win){
-            cache[role].wins++;
-            cache.TOTAL.wins++;
-            message += "WIN: "
+        if (queueType == 420){
+            message += "SOLO ";
         } else {
-            message += "LOSS: "
+            message += "FLEX ";
+        }
+        if (win){
+            message += "VICTORY | "
+        } else {
+            message += "DEFEAT | "
         }
 
         console.log(message + pKills + "-" + pDeaths + "-" + pAssists + " | " + role);
         console.log("~")
 
-        fs.writeFileSync('./data/cache.json', JSON.stringify(cache));
+        fs.writeFileSync(databaseURL, JSON.stringify(cache));
 
         resolve();
     });

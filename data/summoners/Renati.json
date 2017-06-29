@@ -1,0 +1,17 @@
+{"TOP":{"games":203,"wins":108,"tKills":1154,"tDeaths":988,"tAssists":1427,
+"kills":5.684729064039409,"deaths":4.8669950738916254,"assists":7.029556650246305},
+
+"JUNGLE":{"games":94,"wins":47,"tKills":491,"tDeaths":454,"tAssists":787,
+"kills":5.223404255319149,"deaths":4.829787234042553,"assists":8.372340425531915},
+
+"MID":{"games":596,"wins":302,"tKills":3820,"tDeaths":2510,"tAssists":4655,
+"kills":6.409395973154362,"deaths":4.2114093959731544,"assists":7.810402684563758},
+
+"ADC":{"games":242,"wins":119,"tKills":1393,"tDeaths":1071,"tAssists":1984,
+"kills":5.756198347107438,"deaths":4.425619834710743,"assists":8.198347107438016},
+
+"SUPPORT":{"games":82,"wins":44,"tKills":162,"tDeaths":385,"tAssists":1153,
+"kills":1.975609756097561,"deaths":4.695121951219512,"assists":14.060975609756097},
+
+"TOTAL":{"games":1217,"wins":620,"tKills":7020,"tDeaths":5408,"tAssists":10006,
+"kills":5.768282662284306,"deaths":4.443714050944947,"assists":8.221857025472474}}

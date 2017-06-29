@@ -1,0 +1,42 @@
+{
+  "name": "lolRankedStatsByRole",
+  "version": "1.0.0",
+  "description": "Service returns LoL ranked stats by role",
+  "repository": "https://github.com/kylechua/lolRankedStatsByRole",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "test": "ava -t 30s test/*.test.js | tap-dot",
+    "cover": "nyc --cache npm test; nyc report --reporter=html"
+  },
+  "author": "Kyle Chua",
+  "contributors": [
+    {
+      "name": "Kyle Chua",
+      "email": "kyle.chua16@gmail.com"
+    }
+  ],
+  "license": "Apache-2.0",
+  "semistandard": {
+    "globals": [
+      "after",
+      "afterEach",
+      "before",
+      "beforeEach",
+      "describe",
+      "it"
+    ]
+  },
+  "dependencies": {
+    "express": "~4.15.2"
+  },
+  "devDependencies": {
+    "ava": "~0.19.1",
+    "nodejs-repo-tools": "git+https://git@github.com/GoogleCloudPlatform/nodejs-repo-tools.git",
+    "supertest": "~3.0.0",
+    "tap-dot": "~1.0.5"
+  },
+  "engines": {
+    "node": ">=4.3.2"
+  }
+}

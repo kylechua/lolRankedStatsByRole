@@ -2,14 +2,18 @@ const http = require('http');
 const path = require('path');
 const url = require('url');
 const fs = require('fs');
+const os = require('os');
 var scraper = require('./scraper.js');
 
-var server = http.createServer().listen(8080);
+var server = http.createServer().listen(8082);
+console.log("Server is listening on port 8082");
+console.log(os.networkInterfaces().address + " on " + os.hostname())
 
-// Database which stores exchange rates and modifier
-var db;
-
+// Get syntax:
+// /rankedstats/retrieve/{summonername}?season={season}
 server.on('request', function(req, res){
+    console.log("Request received.");
+
     var myURL = url.parse(req.url, true);
     var myPath = path.parse(req.url);
     var pathStr = path.format(myPath);
@@ -17,42 +21,38 @@ server.on('request', function(req, res){
     if (pathStr.indexOf('/rankedstats') != -1){
         if (pathStr.indexOf('/retrieve/') != -1){
 
-            var queueTypes = myURL.query.queue;
-            var queues;
-            if (queueTypes == "flex"){
-                queues = [440];
-            } else if (queueTypes == "solo"){
-                queues = [420];
-            } else {
-                queues = [420,440];
-            }
-
+            var season = myURL.query.season;
             var summonerName = path.parse(myURL.pathname).base;
-            var databaseURL = 'data/summoners/' + summonerName + '.json';
+
+            var databaseURL = './data/summoners/' + summonerName + '_' + season + '.json';
             console.log(databaseURL);
             try {
-                db = JSON.parse(fs.readFileSync(databaseURL, 'utf8'));
+                var db = JSON.parse(fs.readFileSync(databaseURL, 'utf8'));
                 console.log("Found database.")
-                sendData(db, res);
+                sendData(databaseURL, res);
             } catch(e) {
-                console.log(e)
-                scraper.getStats(summonerName, queues, db).then((result) =>{
-                    db = result;
-                    fs.writeFileSync(databaseURL, JSON.stringify(db));
-                    sendData(db, res);
+                if (e.statusCode == ENOENT){
+                    console.log("Data not found.")
+                }
+                console.log("Collecting data...")
+                scraper.getStats(summonerName, season, databaseURL).then(function(result){
+                    sendData(databaseURL, res);
                 }).catch(function(e){
-                    console.log("Unable to retrieve stats.");
+                    
                 });
             }
         }
     } else {
         // Not found, wrong URI
         // response.statusCode = 404;
+        res.statusCode = 404;
+        res.end();
     }
-    res.end();
 });
 
-function sendData(db, res){
-    var data = JSON.stringify(db);
+function sendData(databaseURL, res){
+    var data = fs.readFileSync(databaseURL, 'utf8');
+    res.statusCode = 201;
     res.write(data);
+    res.end();
 }

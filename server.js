@@ -36,7 +36,7 @@ server.on('request', function(req, res){
                 res.write("Refresh");
                 res.end();
                 scraper.getStats(summonerName, season, databaseURL).then(function(result){
-                    sendData(databaseURL, res);
+                    //sendData(databaseURL, res);
                 }).catch(function(e){
                     
                 });
